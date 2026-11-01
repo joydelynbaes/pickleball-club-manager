@@ -71,10 +71,28 @@ function count(map,a,b){return map?.[key(a,b)]||0}
 function inc(map,a,b){let k=key(a,b);map[k]=(map[k]||0)+1}
 function cap(){return state.courts*(state.format==='doubles'?4:2)}
 function pairTeams(ids){
- if(state.format==='singles')return [[ids[0]],[ids[1]]];
- let [a,b,c,d]=ids,opts=[[[a,b],[c,d]],[[a,c],[b,d]],[[a,d],[b,c]]],best=opts[0],low=Infinity;
- for(let teams of opts){let cost=count(state.partners,...teams[0])*1000+count(state.partners,...teams[1])*1000;for(let x of teams[0])for(let y of teams[1])cost+=count(state.opponents,x,y)*35+Math.random()*.5;if(cost<low){low=cost;best=teams}}
- return best;
+  if(state.format==='singles'){
+    return {team1:[ids[0]],team2:[ids[1]]};
+  }
+
+  let [a,b,c,d]=ids;
+  let opts=[[[a,b],[c,d]],[[a,c],[b,d]],[[a,d],[b,c]]];
+  let best=opts[0],low=Infinity;
+
+  for(let teams of opts){
+    let cost=count(state.partners,...teams[0])*1000+
+             count(state.partners,...teams[1])*1000;
+
+    for(let x of teams[0]){
+      for(let y of teams[1]){
+        cost+=count(state.opponents,x,y)*35+Math.random()*.5;
+      }
+    }
+
+    if(cost<low){low=cost;best=teams}
+  }
+
+  return {team1:best[0],team2:best[1]};
 }
 async function generate(){
  if(state.active)return note('Finish the current round first.',true);
@@ -102,10 +120,14 @@ async function finish(closed=false){
  let players=state.players.map(p=>({...p})),partners={...state.partners},opponents={...state.opponents};
  for(let m of a.matches)if(!closed&&m.done){
   let w=m.score[0]>m.score[1]?0:1,l=1-w;
-  m.teams[w].forEach(id=>{let p=players.find(x=>x.id===id);if(p)p.wins++});
-  m.teams[l].forEach(id=>{let p=players.find(x=>x.id===id);if(p)p.losses++});
-  if(state.format==='doubles'){inc(partners,...m.teams[0]);inc(partners,...m.teams[1]);for(let x of m.teams[0])for(let y of m.teams[1])inc(opponents,x,y)}
- }
+  let teams=[m.teams.team1,m.teams.team2];
+teams[w].forEach(id=>{let p=players.find(x=>x.id===id);if(p)p.wins++});
+teams[l].forEach(id=>{let p=players.find(x=>x.id===id);if(p)p.losses++});
+if(state.format==='doubles'){
+  inc(partners,...teams[0]);
+  inc(partners,...teams[1]);
+  for(let x of teams[0])for(let y of teams[1])inc(opponents,x,y);
+}
  await saveState({players,partners,opponents,rounds:[...state.rounds,{...a,closed,ended:new Date().toLocaleTimeString()}],active:null});
 }
 function view(title,sub=''){return `<section class="panel"><h2>${title}</h2><p class="muted small">${sub}</p></section>`}
@@ -138,7 +160,7 @@ function playersView(){
 function courtsView(){
  if(!state.active){$('view').innerHTML=view('No active round','Generate a round from the Session tab.');return}
  let html=`<section class="panel"><h2>Round ${state.active.number}</h2><p class="muted small">${state.active.started}</p></section>`;
- for(let m of state.active.matches){html+=`<section class="match"><div class="muted small">COURT ${m.court} · ${m.done?'FINISHED':state.scoring.toUpperCase()}</div><div class="teams"><div><div class="teamname">${teamText(m.teams[0])}</div><div class="score">${m.score[0]}</div>${m.serving===0&&!m.done?'<span class="green small">SERVING</span>':''}</div><b class="muted">VS</b><div><div class="teamname">${teamText(m.teams[1])}</div><div class="score">${m.score[1]}</div>${m.serving===1&&!m.done?'<span class="green small">SERVING</span>':''}</div></div>${m.done?'<p class="green">Match completed</p>':`<div class="scorebtns"><button class="primary" data-score="${m.court}-0">Team 1 won rally</button><button class="primary" data-score="${m.court}-1">Team 2 won rally</button></div><button class="secondary full" data-undo="${m.court}">Undo last rally</button>`}</section>`}
+ for(let m of state.active.matches){html+=`<section class="match"><div class="muted small">COURT ${m.court} · ${m.done?'FINISHED':state.scoring.toUpperCase()}</div><div class="teams"><div><div class="teamname">${teamText(m.teams.team1)}</div><div class="score">${m.score[0]}</div>${m.serving===0&&!m.done?'<span class="green small">SERVING</span>':''}</div><b class="muted">VS</b><div><div class="teamname">${teamText(m.teams.team2)}</div><div class="score">${m.score[1]}</div>${m.serving===1&&!m.done?'<span class="green small">SERVING</span>':''}</div></div>${m.done?'<p class="green">Match completed</p>':`<div class="scorebtns"><button class="primary" data-score="${m.court}-0">Team 1 won rally</button><button class="primary" data-score="${m.court}-1">Team 2 won rally</button></div><button class="secondary full" data-undo="${m.court}">Undo last rally</button>`}</section>`}
  html+=`<section class="panel"><button class="primary full" id="finish" ${state.active.matches.some(m=>!m.done)?'disabled':''}>Complete round</button><button class="secondary full" id="closeRound">Close round without results</button></section>`;
  $('view').innerHTML=html;
  root.querySelectorAll('[data-score]').forEach(b=>b.onclick=()=>{let [c,t]=b.dataset.score.split('-');score(+c,+t)});
