@@ -5,12 +5,12 @@ import { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWith
 import { getFirestore, doc, getDoc, setDoc, updateDoc, collection, getDocs, onSnapshot, runTransaction, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
 
 const firebaseConfig = {
-  apiKey: "PASTE_API_KEY",
-  authDomain: "PASTE_PROJECT_ID.firebaseapp.com",
-  projectId: "PASTE_PROJECT_ID",
-  storageBucket: "PASTE_PROJECT_ID.firebasestorage.app",
-  messagingSenderId: "PASTE_MESSAGING_SENDER_ID",
-  appId: "PASTE_APP_ID"
+  apiKey: "YOUR_ACTUAL_API_KEY",
+  authDomain: "pickleball-club-manager-59d30.firebaseapp.com",
+  projectId: "pickleball-club-manager-59d30",
+  storageBucket: "pickleball-club-manager-59d30.firebasestorage.app",
+  messagingSenderId: "538566979335",
+  appId: "1:538566979335:web:492ebeed43aad79b9b1fa2"
 };
 const root=document; const $=id=>document.getElementById(id);
 const show=(id,yes)=>$(id).classList.toggle('hidden',!yes);
