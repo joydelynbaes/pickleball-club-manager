@@ -231,16 +231,133 @@ function playersView(){
  $('add').onsubmit=async e=>{e.preventDefault();let name=$('playerName').value.trim();if(state.players.some(p=>p.name.toLowerCase()===name.toLowerCase()))return note('Player already exists.',true);let id=crypto.randomUUID();await saveState({players:[...state.players,{id,name,active:true,games:0,wins:0,losses:0,waits:0}],queue:[...state.queue,id]})};
  root.querySelectorAll('[data-pause]').forEach(b=>b.onclick=async()=>{let id=b.dataset.pause;if(state.active?.matches.some(m=>m.ids.includes(id)))return note('Player is currently playing.',true);await saveState({players:state.players.map(p=>p.id===id?{...p,active:!p.active}:p)})});
 }
-function courtsView(){
- if(!state.active){$('view').innerHTML=view('No active round','Generate a round from the Session tab.');return}
- let html=`<section class="panel"><h2>Round ${state.active.number}</h2><p class="muted small">${state.active.started}</p></section>`;
- for(let m of state.active.matches){html+=`<section class="match"><div class="muted small">COURT ${m.court} · ${m.done?'FINISHED':state.scoring.toUpperCase()}</div><div class="teams"><div><div class="teamname">${teamText(m.teams.team1)}</div><div class="score">${m.score[0]}</div>${m.serving===0&&!m.done?'<span class="green small">SERVING</span>':''}</div><b class="muted">VS</b><div><div class="teamname">${teamText(m.teams.team2)}</div><div class="score">${m.score[1]}</div>${m.serving===1&&!m.done?'<span class="green small">SERVING</span>':''}</div></div>${m.done?'<p class="green">Match completed</p>':`<div class="scorebtns"><button class="primary" data-score="${m.court}-0">Team 1 won rally</button><button class="primary" data-score="${m.court}-1">Team 2 won rally</button></div><button class="secondary full" data-undo="${m.court}">Undo last rally</button>`}</section>`}
- html+=`<section class="panel"><button class="primary full" id="finish" ${state.active.matches.some(m=>!m.done)?'disabled':''}>Complete round</button><button class="secondary full" id="closeRound">Close round without results</button></section>`;
- $('view').innerHTML=html;
- root.querySelectorAll('[data-score]').forEach(b=>b.onclick=()=>{let [c,t]=b.dataset.score.split('-');score(+c,+t)});
- root.querySelectorAll('[data-undo]').forEach(b=>b.onclick=()=>undo(+b.dataset.undo));
- $('finish').onclick=()=>finish();$('closeRound').onclick=()=>{if(confirm('Close this round without recording results?'))finish(true)};
+
+async function startNewSession(){
+  if(role!=='admin')return note('Only the club organizer can start a new session.',true);
+
+  if(state.active)return note('Finish or close the active round before starting a new session.',true);
+
+  if(!confirm('Start a new session? The current leaderboard will be saved, and current session stats will reset. Match history will remain.'))return;
+
+  let previousRanking={
+    number:state.currentSession.number,
+    startedAt:state.currentSession.startedAt,
+    endedAt:new Date().toISOString(),
+    players:state.players.map(p=>({
+      id:p.id,
+      name:p.name,
+      games:p.games||0,
+      wins:p.wins||0,
+      losses:p.losses||0
+    }))
+  };
+
+  let sessionRankings=[
+    ...(state.sessionRankings||[]),
+    previousRanking
+  ].slice(-2);
+
+  let players=state.players.map(p=>({
+    ...p,
+    games:0,
+    wins:0,
+    losses:0,
+    waits:0
+  }));
+
+  let currentSession={
+    number:(state.currentSession.number||1)+1,
+    roundNumber:0,
+    startedAt:new Date().toISOString()
+  };
+
+  await saveState({
+    players,
+    sessionRankings,
+    currentSession
+  });
+
+  note(`Session ${currentSession.number} started!`);
 }
+
+
+function courtsView(){
+  let html='';
+
+  if(!state.active){
+    html+=view('No active round','Generate a round from the Session tab.');
+  }else{
+    html+=`<section class="panel">
+      <h2>Round ${state.active.number}</h2>
+      <p class="muted small">${state.active.started}</p>
+    </section>`;
+
+    for(let m of state.active.matches){
+      html+=`<section class="match">
+        <div class="muted small">COURT ${m.court} · ${m.done?'FINISHED':state.scoring.toUpperCase()}</div>
+        <div class="teams">
+          <div>
+            <div class="teamname">${teamText(m.teams.team1)}</div>
+            <div class="score">${m.score[0]}</div>
+            ${m.serving===0&&!m.done?'<span class="green small">SERVING</span>':''}
+          </div>
+          <b class="muted">VS</b>
+          <div>
+            <div class="teamname">${teamText(m.teams.team2)}</div>
+            <div class="score">${m.score[1]}</div>
+            ${m.serving===1&&!m.done?'<span class="green small">SERVING</span>':''}
+          </div>
+        </div>
+        ${m.done?'<p class="green">Match completed</p>':`
+          <div class="scorebtns">
+            <button class="primary" data-score="${m.court}-0">Team 1 won rally</button>
+            <button class="primary" data-score="${m.court}-1">Team 2 won rally</button>
+          </div>
+          <button class="secondary full" data-undo="${m.court}">Undo last rally</button>
+        `}
+      </section>`;
+    }
+
+    html+=`<section class="panel">
+      <button class="primary full" id="finish" ${state.active.matches.some(m=>!m.done)?'disabled':''}>Complete round</button>
+      <button class="secondary full" id="closeRound">Close round without results</button>
+    </section>`;
+  }
+
+  if(role==='admin'){
+    html+=`<section class="panel">
+      <h2>Session ${state.currentSession.number}</h2>
+      <p class="muted small">Starting a new session saves the current ranking and resets session statistics.</p>
+      <button class="secondary full" id="startNewSession" ${state.active?'disabled':''}>Start New Session</button>
+    </section>`;
+  }
+
+  $('view').innerHTML=html;
+
+  root.querySelectorAll('[data-score]').forEach(b=>{
+    b.onclick=()=>{
+      let [c,t]=b.dataset.score.split('-');
+      score(+c,+t);
+    };
+  });
+
+  root.querySelectorAll('[data-undo]').forEach(b=>{
+    b.onclick=()=>undo(+b.dataset.undo);
+  });
+
+  if($('finish'))$('finish').onclick=()=>finish();
+
+  if($('closeRound')){
+    $('closeRound').onclick=()=>{
+      if(confirm('Close this round without recording results?'))finish(true);
+    };
+  }
+
+  if($('startNewSession')){
+    $('startNewSession').onclick=startNewSession;
+  }
+}
+
 
 function historyView(){
   let matches=(state.rounds||[]).slice().reverse().flatMap(round=>
