@@ -73,7 +73,6 @@ function cap(){return state.courts*(state.format==='doubles'?4:2)}
 function pairTeams(ids){
   if(state.format==='singles'){
     return {team1:[ids[0]],team2:[ids[1]]};
-  }
 
   let [a,b,c,d]=ids;
   let opts=[[[a,b],[c,d]],[[a,c],[b,d]],[[a,d],[b,c]]];
