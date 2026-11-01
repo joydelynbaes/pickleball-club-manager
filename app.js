@@ -180,7 +180,10 @@ function adminView(){
   unsubMembers=onSnapshot(memberList(),snap=>{let el=$('members');if(!el)return;el.innerHTML=snap.docs.map(d=>{let x=d.data();return `<div class="row"><span class="grow">${esc(x.displayName||x.email)}</span><span class="badge">${esc(x.role)}</span></div>`}).join('')});
  }else{$('requests').textContent='Only club organizers can approve requests.';$('members').textContent='Only club organizers can view the member list.'}
 }
-document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>{tab=b.dataset.tab;render()});
+document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>{
+  tab=b.dataset.tab;
+  render();
+});
 $('logout').onclick=()=>signOut(auth);
 window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();installPrompt=e;show('installBtn',true)});
 $('installBtn').onclick=async()=>{if(installPrompt){installPrompt.prompt();installPrompt=null;show('installBtn',false)}};
