@@ -5,7 +5,7 @@ import { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWith
 import { getFirestore, doc, getDoc, setDoc, updateDoc, collection, getDocs, onSnapshot, runTransaction, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyBmTyShKG-Uk_9JTrE9lFWiNfE-Adk0WE",
+  apiKey: "AIzaSyBmTyShKG-Uk_9JTrE9lFWiNfE-Adk0vWE",
   authDomain: "pickleball-club-manager-59d30.firebaseapp.com",
   projectId: "pickleball-club-manager-59d30",
   storageBucket: "pickleball-club-manager-59d30.firebasestorage.app",
