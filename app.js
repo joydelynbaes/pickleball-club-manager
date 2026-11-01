@@ -60,9 +60,36 @@ $('requestJoin').onclick=async()=>{
 $('pendingBack').onclick=restoreMembership;
 function cleanup(){[unsubState,unsubMembers,unsubRequests].forEach(f=>f&&f());unsubState=unsubMembers=unsubRequests=null}
 function enterClub(){
- showOnly('main');$('clubTitle').textContent=club.name;$('userRole').textContent=role==='admin'?'Club organizer':'Club member';
+ showOnly('main');
+ $('clubTitle').textContent=club.name;
+ $('userRole').textContent=role==='admin'?'Club organizer':'Club member';
  cleanup();
- unsubState=onSnapshot(stateRef(),snap=>{if(snap.exists()){state=snap.data();render()}else note('Session data is missing.',true)},e=>note(e.message,true));
+
+ unsubState=onSnapshot(stateRef(),snap=>{
+   if(!snap.exists()){
+     note('Session data is missing.',true);
+     return;
+   }
+
+   state=snap.data();
+
+   // Initialize session tracking for existing clubs.
+   if(!state.currentSession){
+     state.currentSession={
+       number:1,
+       roundNumber:state.rounds?.length||0,
+       startedAt:new Date().toISOString()
+     };
+     state.sessionRankings=[];
+
+     saveState({
+       currentSession:state.currentSession,
+       sessionRankings:state.sessionRankings
+     }).catch(e=>note(e.message,true));
+   }
+
+   render();
+ },e=>note(e.message,true));
 }
 function saveState(patch){return updateDoc(stateRef(),{...patch,updatedAt:serverTimestamp()})}
 function nm(id){return state.players.find(p=>p.id===id)?.name||'Removed'}
