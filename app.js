@@ -66,6 +66,9 @@ function enterClub(){
 }
 function saveState(patch){return updateDoc(stateRef(),{...patch,updatedAt:serverTimestamp()})}
 function nm(id){return state.players.find(p=>p.id===id)?.name||'Removed'}
+function teamText(ids){
+  return ids.map(nm).map(esc).join(' & ');
+}
 function key(a,b){return [a,b].sort((x,y)=>x-y).join('_')}
 function count(map,a,b){return map?.[key(a,b)]||0}
 function inc(map,a,b){let k=key(a,b);map[k]=(map[k]||0)+1}
