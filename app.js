@@ -124,15 +124,53 @@ function pairTeams(ids){
 
   return {team1:best[0],team2:best[1]};
 }
+
 async function generate(){
- if(state.active)return note('Finish the current round first.',true);
- let available=state.queue.filter(id=>state.players.some(p=>p.id===id&&p.active));
- if(available.length<cap())return note(`Need ${cap()} active players; only ${available.length} are waiting.`,true);
- let ids=available.slice(0,cap()),size=state.format==='doubles'?4:2,matches=[];
- for(let i=0;i<state.courts;i++){let group=ids.slice(i*size,(i+1)*size);matches.push({court:i+1,ids:group,teams:pairTeams(group),score:[0,0],serving:0,server:state.format==='singles'?1:2,done:false,events:[]})}
- let q=state.queue.filter(id=>!ids.includes(id)).concat(ids),players=state.players.map(p=>({...p,games:p.games+(ids.includes(p.id)?1:0),waits:p.active&&!ids.includes(p.id)?p.waits+1:p.waits}));
- await saveState({queue:q,players,active:{number:state.rounds.length+1,matches,started:new Date().toLocaleTimeString()}});
+  if(state.active)return note('Finish the current round first.',true);
+
+  let available=state.queue.filter(id=>state.players.some(p=>p.id===id&&p.active));
+  if(available.length<cap())return note(`Need ${cap()} active players; only ${available.length} are waiting.`,true);
+
+  let ids=available.slice(0,cap()),size=state.format==='doubles'?4:2,matches=[];
+
+  for(let i=0;i<state.courts;i++){
+    let group=ids.slice(i*size,(i+1)*size);
+    matches.push({
+      court:i+1,
+      ids:group,
+      teams:pairTeams(group),
+      score:[0,0],
+      serving:0,
+      server:state.format==='singles'?1:2,
+      done:false,
+      events:[]
+    });
+  }
+
+  let q=state.queue.filter(id=>!ids.includes(id)).concat(ids);
+  let players=state.players.map(p=>({
+    ...p,
+    games:p.games+(ids.includes(p.id)?1:0),
+    waits:p.active&&!ids.includes(p.id)?p.waits+1:p.waits
+  }));
+
+  let currentSession={
+    ...state.currentSession,
+    roundNumber:(state.currentSession?.roundNumber||0)+1
+  };
+
+  await saveState({
+    queue:q,
+    players,
+    currentSession,
+    active:{
+      number:currentSession.roundNumber,
+      matches,
+      started:new Date().toLocaleTimeString()
+    }
+  });
 }
+
 async function score(court,team){
  let m=state.active.matches.find(x=>x.court===court);if(!m||m.done)return;
  let old={score:[...m.score],serving:m.serving,server:m.server};m.events=[...(m.events||[]),old];
