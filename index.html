@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#101914">
+<meta name="description" content="Private Pickleball Club Manager">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" href="/icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/styles.css">
+<title>Pickleball Club Manager</title>
+</head>
+<body>
+<div class="app">
+<header class="top">
+  <div><div class="eyebrow">PRIVATE CLUB EDITION</div><h1>PICKLE<span>BALL</span></h1><p>Play fair. Rotate smart.</p></div>
+  <button id="installBtn" class="secondary hidden">Install app</button>
+</header>
+<div id="notice" class="notice hidden"></div>
+<section id="auth" class="panel">
+  <h2>Welcome to your club</h2>
+  <p class="muted">Sign in or create your account to continue.</p>
+  <label>Email<input id="email" type="email" autocomplete="email" placeholder="you@example.com"></label>
+  <label>Password<input id="password" type="password" autocomplete="current-password" placeholder="At least 6 characters"></label>
+  <div class="actions"><button id="signIn" class="primary">Sign in</button><button id="signUp" class="secondary">Create account</button></div>
+</section>
+<section id="clubGate" class="panel hidden">
+  <h2>Club access</h2>
+  <p class="muted">Create your club as the organizer, or request access using your club ID.</p>
+  <label>Your name<input id="displayName" placeholder="Your name"></label>
+  <label>Club name (organizer only)<input id="newClubName" placeholder="e.g. San Pedro Pickleball Club"></label>
+  <button id="createClub" class="primary full">Create a new club</button>
+  <hr>
+  <label>Club ID<input id="clubId" placeholder="Paste club ID from organizer"></label>
+  <button id="requestJoin" class="secondary full">Request to join club</button>
+  <button id="signOut" class="link">Sign out</button>
+</section>
+<section id="pending" class="panel hidden">
+  <h2>Request submitted</h2><p class="muted">Your club organizer needs to approve your access. Keep this app installed and sign in again later.</p>
+  <button id="pendingBack" class="secondary">Check again</button><button id="signOut2" class="link">Sign out</button>
+</section>
+<section id="main" class="hidden">
+  <div class="clubbar panel"><div><strong id="clubTitle">My Club</strong><div class="muted small" id="userRole"></div></div><button id="logout" class="secondary">Sign out</button></div>
+  <nav class="tabs">
+    <button data-tab="session" class="active">Session</button>
+    <button data-tab="players">Players</button>
+    <button data-tab="courts">Courts & Scores</button>
+    <button data-tab="admin">Club Admin</button>
+  </nav>
+  <div id="view"></div>
+</section>
+<footer>Pickleball Club Manager · Private club prototype</footer>
+</div>
+<script type="module" src="/app.js"></script>
+</body></html>

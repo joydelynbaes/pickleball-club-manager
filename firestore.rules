@@ -1,0 +1,37 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() { return request.auth != null; }
+    function clubExists(clubId) {
+      return exists(/databases/$(database)/documents/clubs/$(clubId));
+    }
+    function isAdmin(clubId) {
+      return signedIn() && clubExists(clubId) &&
+        get(/databases/$(database)/documents/clubs/$(clubId)).data.adminUid == request.auth.uid;
+    }
+    function isMember(clubId) {
+      return signedIn() &&
+        exists(/databases/$(database)/documents/clubs/$(clubId)/members/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/clubs/$(clubId)/members/$(request.auth.uid)).data.active == true;
+    }
+    match /clubs/{clubId} {
+      allow create: if signedIn() && request.resource.data.adminUid == request.auth.uid;
+      allow get: if signedIn();
+      allow list: if false;
+      allow update, delete: if isAdmin(clubId);
+      match /members/{uid} {
+        allow read: if isMember(clubId) || isAdmin(clubId);
+        allow create, update, delete: if isAdmin(clubId);
+      }
+      match /joinRequests/{uid} {
+        allow create: if signedIn() && request.auth.uid == uid &&
+          request.resource.data.uid == uid && request.resource.data.status == 'pending';
+        allow read: if (signedIn() && request.auth.uid == uid) || isAdmin(clubId);
+        allow update, delete: if isAdmin(clubId);
+      }
+      match /state/{document} {
+        allow read, write: if isMember(clubId) || isAdmin(clubId);
+      }
+    }
+  }
+}
