@@ -277,7 +277,7 @@ async function startNewSession(){
     currentSession
   });
 
-  note(`Session ${currentSession.number} started!`);
+  note('New session started!');
 }
 
 
@@ -288,7 +288,7 @@ function courtsView(){
     html+=view('No active round','Generate a round from the Session tab.');
   }else{
     html+=`<section class="panel">
-      <h2>Round ${state.active.number}</h2>
+     <h2>Current Session</h2>
       <p class="muted small">${state.active.started}</p>
     </section>`;
 
