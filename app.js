@@ -127,6 +127,7 @@ if(state.format==='doubles'){
   inc(partners,...teams[1]);
   for(let x of teams[0])for(let y of teams[1])inc(opponents,x,y);
 }
+}
  await saveState({players,partners,opponents,rounds:[...state.rounds,{...a,closed,ended:new Date().toLocaleTimeString()}],active:null});
 }
 function view(title,sub=''){return `<section class="panel"><h2>${title}</h2><p class="muted small">${sub}</p></section>`}
