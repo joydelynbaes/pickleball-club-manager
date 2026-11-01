@@ -136,9 +136,14 @@ if(state.format==='doubles'){
 }
 function view(title,sub=''){return `<section class="panel"><h2>${title}</h2><p class="muted small">${sub}</p></section>`}
 function render(){
- if(!state)return;
- const tabs=document.querySelectorAll('.tabs button');tabs.forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));
- if(tab==='session')sessionView();if(tab==='players')playersView();if(tab==='courts')courtsView();if(tab==='admin')adminView();
+  if(!state)return;
+  const tabs=document.querySelectorAll('.tabs button');
+  tabs.forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));
+  if(tab==='session')sessionView();
+  if(tab==='players')playersView();
+  if(tab==='courts')courtsView();
+  if(tab==='history')historyView();
+  if(tab==='admin')adminView();
 }
 function sessionView(){
  let waiting=state.queue.filter(id=>state.players.some(p=>p.id===id&&p.active));
@@ -171,6 +176,65 @@ function courtsView(){
  root.querySelectorAll('[data-undo]').forEach(b=>b.onclick=()=>undo(+b.dataset.undo));
  $('finish').onclick=()=>finish();$('closeRound').onclick=()=>{if(confirm('Close this round without recording results?'))finish(true)};
 }
+
+function historyView(){
+  let matches=(state.rounds||[]).slice().reverse().flatMap(round=>
+    (round.matches||[])
+      .filter(m=>m.done)
+      .map(m=>({
+        round:round.number,
+        court:m.court,
+        teams:m.teams,
+        score:m.score,
+        ended:round.ended
+      }))
+  );
+
+  if(!matches.length){
+    $('view').innerHTML=view(
+      'Match History',
+      'Completed matches will appear here.'
+    );
+    return;
+  }
+
+  $('view').innerHTML=`
+    <section class="panel">
+      <h2>Match History</h2>
+      <p class="muted small">${matches.length} completed matches</p>
+    </section>
+    ${matches.map(m=>{
+      let winner=m.score[0]>m.score[1]?0:1;
+      let teams=[m.teams.team1,m.teams.team2];
+
+      return `
+        <section class="panel">
+          <div class="row">
+            <b>Round ${m.round} · Court ${m.court}</b>
+            <span class="muted small">${esc(m.ended||'')}</span>
+          </div>
+
+          <div class="teams">
+            <div>
+              <div class="teamname">${teamText(teams[0])}</div>
+              <div class="score">${m.score[0]}</div>
+              ${winner===0?'<span class="green small">WINNER</span>':''}
+            </div>
+
+            <b class="muted">VS</b>
+
+            <div>
+              <div class="teamname">${teamText(teams[1])}</div>
+              <div class="score">${m.score[1]}</div>
+              ${winner===1?'<span class="green small">WINNER</span>':''}
+            </div>
+          </div>
+        </section>
+      `;
+    }).join('')}
+  `;
+}
+
 function adminView(){
  $('view').innerHTML=`<section class="panel"><h2>Club access</h2><p class="muted small">Share this club ID with members. They must request access and be approved by an organizer.</p><div class="badge">${esc(clubId)}</div><button id="copyId" class="secondary full">Copy club ID</button></section><section class="panel"><h2>Pending requests</h2><div id="requests" class="muted small">Loading requests…</div></section><section class="panel"><h2>Club members</h2><div id="members" class="muted small">Loading members…</div></section>`;
  $('copyId').onclick=()=>navigator.clipboard.writeText(clubId).then(()=>note('Club ID copied.'));
