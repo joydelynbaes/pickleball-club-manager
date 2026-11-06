@@ -413,7 +413,7 @@ function rankingView(){
 
       return `
         <div class="row">
-          <b class="green">#${i+1}</b>
+          <b class="green">${['🥇','🥈','🥉'][i]||'#'+(i+1)}</b>
           <div class="grow">
             <b>${esc(p.name)}</b>
             <div class="muted small">
