@@ -14,7 +14,19 @@ const firebaseConfig = {
 };
 const root=document; const $=id=>document.getElementById(id);
 const show=(id,yes)=>$(id).classList.toggle('hidden',!yes);
-const note=(msg,error=false)=>{ $('notice').textContent=msg;$('notice').classList.toggle('error',error);show('notice',true)};
+let noticeTimer;
+
+const note=(msg,error=false)=>{
+  $('notice').textContent=msg;
+  $('notice').classList.toggle('error',error);
+  show('notice',true);
+
+  clearTimeout(noticeTimer);
+
+  noticeTimer=setTimeout(()=>{
+    show('notice',false);
+  },3500);
+};
 let auth,db,user,clubId,club,role,state,unsubState,unsubMembers,unsubRequests,tab='session',installPrompt;
 let profilePlayerId=null, profileReturnTab='players';
 const path=(...p)=>p.join('/');
