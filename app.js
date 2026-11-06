@@ -306,18 +306,22 @@ function playersView(){
             <div class="muted small">
               ${p.games||0} games · ${p.wins||0} wins · ${p.losses||0} losses · ${p.waits||0} waits
             </div>
-            <span class="player-status ${p.active?'active':'paused'} small">
-              ${p.active?'Active':'Paused'}
+            <span class="player-status ${p.archived?'archived':p.active?'active':'paused'} small">
+             ${p.archived?'Archived':p.active?'Active':'Paused'}
             </span>
           </div>
 
-          ${isAdmin?`
+         ${isAdmin?`
             <div class="player-actions">
-              <button class="secondary small" data-edit="${p.id}">Edit</button>
-              <button class="secondary small" data-pause="${p.id}">
-                ${p.active?'Pause':'Activate'}
-              </button>
-              <button class="secondary small danger" data-archive="${p.id}">Remove</button>
+              ${p.archived?`
+                <button class="primary small" data-restore="${p.id}">Restore</button>
+                `:`
+                <button class="secondary small" data-edit="${p.id}">Edit</button>
+                <button class="secondary small" data-pause="${p.id}">
+                  ${p.active?'Pause':'Activate'}
+                </button>
+                <button class="secondary small danger" data-archive="${p.id}">Remove</button>
+              `}
             </div>
           `:''}
         </div>
