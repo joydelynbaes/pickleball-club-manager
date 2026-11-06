@@ -92,12 +92,65 @@ $('createClub').onclick=async()=>{
   localStorage.setItem('pbcm_club',clubId);club={name};role='admin';enterClub();
  }catch(e){note(e.message,true)}
 };
+
 $('requestJoin').onclick=async()=>{
- try{clubId=$('clubId').value.trim();let display=$('displayName').value.trim();if(!clubId||!display)return note('Enter your name and club ID.',true);
- const c=await getDoc(clubRef());if(!c.exists())return note('Club ID not found.',true);
- await setDoc(doc(db,'clubs',clubId,'joinRequests',user.uid),{uid:user.uid,email:user.email,displayName:display,status:'pending',requestedAt:serverTimestamp()});
- localStorage.setItem('pbcm_club',clubId);showOnly('pending');note('Access request sent. Ask your organizer to approve you.');
- }catch(e){note(e.message,true)}
+  try{
+    clubId=$('clubId').value.trim();
+    let display=$('displayName').value.trim();
+
+    if(!clubId||!display){
+      return note('Enter your name and club ID.',true);
+    }
+
+    const c=await getDoc(clubRef());
+
+    if(!c.exists()){
+      return note('Club ID not found.',true);
+    }
+
+    const existingMember=await getDoc(memberRef(user.uid));
+
+    // Existing approved member or organizer: open the club directly.
+    if(existingMember.exists()&&existingMember.data().active===true){
+      club=c.data();
+      role=existingMember.data().role;
+      localStorage.setItem('pbcm_club',clubId);
+      enterClub();
+      return note('Welcome back to '+club.name+'!');
+    }
+
+    // Organizer account: preserve organizer access.
+    if(c.data().adminUid===user.uid){
+      await setDoc(memberRef(user.uid),{
+        uid:user.uid,
+        email:user.email,
+        displayName:display,
+        role:'admin',
+        active:true
+      },{merge:true});
+
+      club=c.data();
+      role='admin';
+      localStorage.setItem('pbcm_club',clubId);
+      enterClub();
+      return note('Welcome back, organizer!');
+    }
+
+    await setDoc(doc(db,'clubs',clubId,'joinRequests',user.uid),{
+      uid:user.uid,
+      email:user.email,
+      displayName:display,
+      status:'pending',
+      requestedAt:serverTimestamp()
+    });
+
+    localStorage.setItem('pbcm_club',clubId);
+    showOnly('pending');
+    note('Access request sent. Ask your organizer to approve you.');
+
+  }catch(e){
+    note(e.message,true);
+  }
 };
 $('pendingBack').onclick=restoreMembership;
 function cleanup(){[unsubState,unsubMembers,unsubRequests].forEach(f=>f&&f());unsubState=unsubMembers=unsubRequests=null}
