@@ -1194,5 +1194,5 @@ document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>{
 $('logout').onclick=()=>signOut(auth);
 window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();installPrompt=e;show('installBtn',true)});
 $('installBtn').onclick=async()=>{if(installPrompt){installPrompt.prompt();installPrompt=null;show('installBtn',false)}};
-if('serviceWorker'in navigator)navigator.serviceWorker.register('/sw.js').catch(()=>{});
+if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js').catch(e=>console.error('Service worker registration failed:',e));
 init();
