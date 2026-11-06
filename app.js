@@ -219,6 +219,11 @@ await saveState({
 function view(title,sub=''){return `<section class="panel"><h2>${title}</h2><p class="muted small">${sub}</p></section>`}
 function render(){
   if(!state)return;
+
+  if(profilePlayerId){
+    playerProfileView();
+    return;
+  }
   const tabs=document.querySelectorAll('.tabs button');
   tabs.forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));
   if(tab==='session')sessionView();
