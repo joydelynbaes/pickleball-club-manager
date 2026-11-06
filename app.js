@@ -463,6 +463,152 @@ function rankingView(){
   `;
 }
 
+
+function openPlayerProfile(playerId,returnTab='players'){
+  profilePlayerId=playerId;
+  profileReturnTab=returnTab;
+  playerProfileView();
+}
+
+function playerProfileView(){
+  const player=state.players.find(p=>p.id===profilePlayerId);
+
+  if(!player){
+    tab=profileReturnTab;
+    render();
+    return;
+  }
+
+  let matches=[];
+
+  (state.rounds||[]).forEach(round=>{
+    (round.matches||[]).forEach(match=>{
+      if(!match.done)return;
+
+      let team1=match.teams.team1||[];
+      let team2=match.teams.team2||[];
+
+      if(!team1.includes(player.id)&&!team2.includes(player.id))return;
+
+      let playerTeam=team1.includes(player.id)?0:1;
+      let won=match.score[playerTeam]>match.score[1-playerTeam];
+
+      matches.push({
+        round:round.number,
+        court:match.court,
+        teams:match.teams,
+        score:match.score,
+        won,
+        ended:round.ended,
+        endedAt:round.endedAt
+      });
+    });
+  });
+
+  let wins=matches.filter(m=>m.won).length;
+  let losses=matches.length-wins;
+  let percentage=matches.length?(wins/matches.length*100).toFixed(1):'0.0';
+
+  let partners={};
+  let opponents={};
+
+  matches.forEach(match=>{
+    let team1=match.teams.team1||[];
+    let team2=match.teams.team2||[];
+    let myTeam=team1.includes(player.id)?team1:team2;
+    let otherTeam=team1.includes(player.id)?team2:team1;
+
+    myTeam.filter(id=>id!==player.id).forEach(id=>{
+      partners[id]=(partners[id]||0)+1;
+    });
+
+    otherTeam.forEach(id=>{
+      opponents[id]=(opponents[id]||0)+1;
+    });
+  });
+
+  function peopleList(counts){
+    return Object.entries(counts)
+      .sort((a,b)=>b[1]-a[1])
+      .slice(0,5)
+      .map(([id,total])=>`
+        <div class="row">
+          <span class="grow">${esc(nm(id))}</span>
+          <span class="badge">${total} matches</span>
+        </div>
+      `).join('')||'<p class="muted small">No match data yet.</p>';
+  }
+
+  let recent=[...matches].reverse().slice(0,10);
+
+  $('view').innerHTML=`
+    <section class="panel">
+      <button class="secondary" id="profileBack">← Back</button>
+      <h2>${esc(player.name)}</h2>
+      <p class="muted small">Player Profile</p>
+    </section>
+
+    <section class="panel">
+      <h2>Career Statistics</h2>
+      <div class="grid2">
+        <div>
+          <div class="score">${matches.length}</div>
+          <div class="muted small">Games played</div>
+        </div>
+        <div>
+          <div class="score">${percentage}%</div>
+          <div class="muted small">Win percentage</div>
+        </div>
+        <div>
+          <div class="score green">${wins}</div>
+          <div class="muted small">Wins</div>
+        </div>
+        <div>
+          <div class="score">${losses}</div>
+          <div class="muted small">Losses</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Best Partners</h2>
+      ${state.format==='singles'
+        ?'<p class="muted small">Partner statistics are for doubles matches.</p>'
+        :peopleList(partners)}
+    </section>
+
+    <section class="panel">
+      <h2>Most Frequent Opponents</h2>
+      ${peopleList(opponents)}
+    </section>
+
+    <section class="panel">
+      <h2>Recent Matches</h2>
+      ${recent.length?recent.map(m=>{
+        let teams=[m.teams.team1,m.teams.team2];
+        return `
+          <div class="row">
+            <div class="grow">
+              <b>Round ${m.round} · Court ${m.court}</b>
+              <div class="muted small">
+                ${teamText(teams[0])} ${m.score[0]} - ${m.score[1]} ${teamText(teams[1])}
+              </div>
+            </div>
+            <span class="badge">${m.won?'WIN':'LOSS'}</span>
+          </div>
+        `;
+      }).join(''):'<p class="muted">No completed matches yet.</p>'}
+    </section>
+  `;
+
+  $('profileBack').onclick=()=>{
+    profilePlayerId=null;
+    tab=profileReturnTab;
+    render();
+  };
+}
+
+
 function historyView(){
   let matches=(state.rounds||[]).slice().reverse().flatMap(round=>
     (round.matches||[])
