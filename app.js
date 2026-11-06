@@ -1075,11 +1075,52 @@ function adminView(){
 
       el.innerHTML=snap.docs.map(d=>{
         let x=d.data();
+        const isActive=x.active===true;
+        const isOrganizer=x.role==='admin';
+
         return `<div class="row">
-          <span class="grow">${esc(x.displayName||x.email)}</span>
-          <span class="badge">${esc(x.role)}</span>
+          <div class="grow">
+            <b>${esc(x.displayName||x.email)}</b>
+            <div class="muted small">${esc(x.email||'')}</div>
+            <span class="player-status ${isActive?'active':'archived'} small">
+              ${isActive?'Active':'Removed'}
+            </span>
+          </div>
+
+          <div class="player-actions">
+            <span class="badge">${esc(x.role)}</span>
+            ${isActive&&!isOrganizer&&d.id!==user.uid?`
+              <button class="secondary small danger" data-remove-member="${d.id}">
+                Remove
+              </button>
+            `:''}
+          </div>
         </div>`;
       }).join('');
+
+      el.querySelectorAll('[data-remove-member]').forEach(b=>{
+        b.onclick=async()=>{
+          const uid=b.dataset.removeMember;
+          const member=snap.docs.find(d=>d.id===uid)?.data();
+          if(!member)return;
+
+          const name=member.displayName||member.email||'this member';
+
+          if(!confirm(`Remove ${name} from this club? They will lose access, but their player records and match history will remain.`))return;
+
+          try{
+            await updateDoc(memberRef(uid),{
+              active:false,
+              removedAt:serverTimestamp(),
+              removedBy:user.uid
+            });
+
+            note(`${name} has been removed from the club.`);
+          }catch(e){
+            note(e.message,true);
+          }
+        };
+      });
     });
   }else{
     $('requests').textContent='Only club organizers can approve requests.';
