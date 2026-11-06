@@ -1,18 +1,20 @@
+
 {
-  "name": "Pickleball Club Manager",
-  "short_name": "Pickleball",
-  "start_url": "/",
-  "scope": "/",
+  "id": "./",
+  "name": "Saints Rally Pickleball",
+  "short_name": "Saints Rally",
+  "start_url": "./",
+  "scope": "./",
   "display": "standalone",
   "background_color": "#101914",
   "theme_color": "#101914",
-  "description": "Private pickleball club rotation and scoring app",
+  "description": "Private pickleball club rotation, player management, and scoring app",
   "icons": [
     {
-      "src": "/icon.svg",
+      "src": "./icon.svg",
       "sizes": "any",
       "type": "image/svg+xml",
-      "purpose": "any maskable"
+      "purpose": "any"
     }
   ]
 }
