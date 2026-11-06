@@ -250,31 +250,175 @@ function sessionView(){
 }
 
 
+
 function playersView(){
-  $('view').innerHTML=`<section class="panel"><h2>Players</h2><form id="add"><input id="playerName" placeholder="Player name" required><button class="primary full">Add player</button></form>
-  ${state.players.map(p=>`<div class="row"><div class="grow"><b><a href="#" data-profile="${p.id}">${esc(p.name)}</a></b><div class="muted small">${p.games} games · ${p.wins} wins · ${p.losses} losses · ${p.waits} waits</div></div><button class="secondary small" data-pause="${p.id}">${p.active?'Pause':'Activate'}</button></div>`).join('')}</section>`;
+  const isAdmin=role==='admin';
 
-  $('add').onsubmit=async e=>{
-    e.preventDefault();
-    let name=$('playerName').value.trim();
-    if(state.players.some(p=>p.name.toLowerCase()===name.toLowerCase()))return note('Player already exists.',true);
-    let id=crypto.randomUUID();
-    await saveState({players:[...state.players,{id,name,active:true,games:0,wins:0,losses:0,waits:0}],queue:[...state.queue,id]});
-  };
+  $('view').innerHTML=`
+    <section class="panel">
+      <h2>Players (${state.players.filter(p=>!p.archived).length})</h2>
 
-  root.querySelectorAll('[data-profile]').forEach(b=>{
-    b.onclick=e=>{
-      e.preventDefault();
-      openPlayerProfile(b.dataset.profile,'players');
+      ${isAdmin?`
+        <form id="add">
+          <input id="playerName" placeholder="Player name" required>
+          <button class="primary full">Add player</button>
+        </form>
+      `:''}
+
+      <div class="player-tools">
+        <input class="player-search" id="playerSearch" placeholder="Search players...">
+
+        <div class="player-filters">
+          <button class="secondary active" data-filter="all">All</button>
+          <button class="secondary" data-filter="active">Active</button>
+          <button class="secondary" data-filter="paused">Paused</button>
+        </div>
+      </div>
+
+      <div id="playerList"></div>
+    </section>
+  `;
+
+  let filter='all';
+
+  function renderList(){
+    const search=$('playerSearch').value.trim().toLowerCase();
+
+    let players=state.players.filter(p=>!p.archived);
+
+    if(filter==='active')players=players.filter(p=>p.active);
+    if(filter==='paused')players=players.filter(p=>!p.active);
+
+    players=players.filter(p=>p.name.toLowerCase().includes(search));
+
+    $('playerList').innerHTML=players.length?
+      players.map(p=>`
+        <div class="row">
+          <div class="grow">
+            <b><a href="#" data-profile="${p.id}">${esc(p.name)}</a></b>
+            <div class="muted small">
+              ${p.games||0} games · ${p.wins||0} wins · ${p.losses||0} losses · ${p.waits||0} waits
+            </div>
+            <span class="player-status ${p.active?'active':'paused'} small">
+              ${p.active?'Active':'Paused'}
+            </span>
+          </div>
+
+          ${isAdmin?`
+            <div class="player-actions">
+              <button class="secondary small" data-edit="${p.id}">Edit</button>
+              <button class="secondary small" data-pause="${p.id}">
+                ${p.active?'Pause':'Activate'}
+              </button>
+              <button class="secondary small danger" data-archive="${p.id}">Remove</button>
+            </div>
+          `:''}
+        </div>
+      `).join('')
+      :'<p class="player-empty">No players found.</p>';
+
+    $('playerList').querySelectorAll('[data-profile]').forEach(b=>{
+      b.onclick=e=>{
+        e.preventDefault();
+        openPlayerProfile(b.dataset.profile,'players');
+      };
+    });
+
+    $('playerList').querySelectorAll('[data-edit]').forEach(b=>{
+      b.onclick=async()=>{
+        const id=b.dataset.edit;
+        const player=state.players.find(p=>p.id===id);
+        if(!player)return;
+
+        const name=prompt('Edit player name:',player.name);
+        if(name===null)return;
+
+        const newName=name.trim();
+        if(!newName)return note('Player name cannot be empty.',true);
+
+        if(state.players.some(p=>p.id!==id&&!p.archived&&p.name.toLowerCase()===newName.toLowerCase())){
+          return note('Player already exists.',true);
+        }
+
+        await saveState({
+          players:state.players.map(p=>p.id===id?{...p,name:newName}:p)
+        });
+      };
+    });
+
+    $('playerList').querySelectorAll('[data-pause]').forEach(b=>{
+      b.onclick=async()=>{
+        const id=b.dataset.pause;
+
+        if(state.active?.matches.some(m=>m.ids.includes(id))){
+          return note('Player is currently playing.',true);
+        }
+
+        await saveState({
+          players:state.players.map(p=>p.id===id?{...p,active:!p.active}:p)
+        });
+      };
+    });
+
+    $('playerList').querySelectorAll('[data-archive]').forEach(b=>{
+      b.onclick=async()=>{
+        const id=b.dataset.archive;
+        const player=state.players.find(p=>p.id===id);
+        if(!player)return;
+
+        if(state.active?.matches.some(m=>m.ids.includes(id))){
+          return note('Player is currently playing.',true);
+        }
+
+        if(!confirm(`Remove ${player.name} from the active club roster? Their match history and statistics will be preserved.`))return;
+
+        await saveState({
+          players:state.players.map(p=>p.id===id?{...p,archived:true,active:false}:p),
+          queue:state.queue.filter(x=>x!==id)
+        });
+      };
+    });
+  }
+
+  $('playerSearch').oninput=renderList;
+
+  root.querySelectorAll('[data-filter]').forEach(b=>{
+    b.onclick=()=>{
+      filter=b.dataset.filter;
+
+      root.querySelectorAll('[data-filter]').forEach(x=>{
+        x.classList.toggle('active',x===b);
+      });
+
+      renderList();
     };
   });
 
-  root.querySelectorAll('[data-pause]').forEach(b=>b.onclick=async()=>{
-    let id=b.dataset.pause;
-    if(state.active?.matches.some(m=>m.ids.includes(id)))return note('Player is currently playing.',true);
-    await saveState({players:state.players.map(p=>p.id===id?{...p,active:!p.active}:p)});
-  });
+  if(isAdmin){
+    $('add').onsubmit=async e=>{
+      e.preventDefault();
+
+      const name=$('playerName').value.trim();
+
+      if(state.players.some(p=>p.name.toLowerCase()===name.toLowerCase())){
+        return note('Player already exists.',true);
+      }
+
+      const id=crypto.randomUUID();
+
+      await saveState({
+        players:[...state.players,{
+          id,name,active:true,archived:false,
+          games:0,wins:0,losses:0,waits:0
+        }],
+        queue:[...state.queue,id]
+      });
+    };
+  }
+
+  renderList();
 }
+
 
 async function startNewSession(){
   if(role!=='admin')return note('Only the club organizer can start a new session.',true);
