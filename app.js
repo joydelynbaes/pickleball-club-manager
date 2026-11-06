@@ -335,6 +335,27 @@ function playersView(){
       };
     });
 
+    $('playerList').querySelectorAll('[data-restore]').forEach(b=>{
+  b.onclick=async()=>{
+    const id=b.dataset.restore;
+    const player=state.players.find(p=>p.id===id);
+    if(!player)return;
+
+    if(!confirm(`Restore ${player.name} to the active club roster?`))return;
+
+    await saveState({
+      players:state.players.map(p=>
+        p.id===id?{...p,archived:false,active:true}:p
+      ),
+      queue:state.queue.includes(id)
+        ?state.queue
+        :[...state.queue,id]
+    });
+
+    note(`${player.name} has been restored!`);
+  };
+}); 
+    
     $('playerList').querySelectorAll('[data-edit]').forEach(b=>{
       b.onclick=async()=>{
         const id=b.dataset.edit;
