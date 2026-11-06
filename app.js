@@ -396,6 +396,7 @@ function courtsView(){
   }
 }
 
+
 function rankingView(){
   const currentPlayers=[...(state.players||[])].sort((a,b)=>{
     if((b.wins||0)!==(a.wins||0)){
@@ -436,7 +437,7 @@ function rankingView(){
         <div class="row">
           <b class="green">${['🥇','🥈','🥉'][i]||'#'+(i+1)}</b>
           <div class="grow">
-            <b>${esc(p.name)}</b>
+            <b><a href="#" data-profile="${esc(p.id)}">${esc(p.name)}</a></b>
             <div class="muted small">
               ${games} games · ${wins} wins · ${losses} losses
             </div>
@@ -461,7 +462,15 @@ function rankingView(){
         '<p class="muted">No previous session ranking yet. It will appear here after you start a new session.</p>'}
     </section>
   `;
+
+  root.querySelectorAll('[data-profile]').forEach(b=>{
+    b.onclick=e=>{
+      e.preventDefault();
+      openPlayerProfile(b.dataset.profile,'ranking');
+    };
+  });
 }
+
 
 
 function openPlayerProfile(playerId,returnTab='players'){
