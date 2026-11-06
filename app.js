@@ -580,11 +580,9 @@ function playerProfileView(){
     </section>
 
     <section class="panel">
-      <h2>Best Partners</h2>
-      ${state.format==='singles'
-        ?'<p class="muted small">Partner statistics are for doubles matches.</p>'
-        :peopleList(partners)}
-    </section>
+  <h2>Best Partners</h2>
+  ${peopleList(partners)}
+</section>
 
     <section class="panel">
       <h2>Most Frequent Opponents</h2>
