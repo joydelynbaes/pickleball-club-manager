@@ -69,3 +69,27 @@ a[data-profile]:hover {
   color: #a0f5d3;
   text-decoration: underline;
 }
+
+/* Club Description */
+textarea {
+  display: block;
+  width: 100%;
+  min-height: 130px;
+  padding: 12px;
+  margin-top: 6px;
+  font: inherit;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #edf5ef;
+  background: #101b15;
+  border: 1px solid #405449;
+  border-radius: 9px;
+  resize: vertical;
+  box-sizing: border-box;
+}
+
+textarea:focus {
+  outline: none;
+  border-color: #65e9b2;
+  box-shadow: 0 0 0 2px rgba(101,233,178,0.15);
+}
