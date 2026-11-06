@@ -1086,9 +1086,19 @@ function adminView(){
 
           let x=req.data();
 
+          const existingMember = await getDoc(memberRef(uid));
+
           await setDoc(memberRef(uid),{
-            uid,email:x.email,displayName:x.displayName,
-            role:'member',active:true,joinedAt:serverTimestamp()
+            uid,
+            email:x.email,
+            displayName:x.displayName,
+            role: uid === club.adminUid
+              ? 'admin'
+              : (existingMember.exists() ? existingMember.data().role : 'member'),
+            active:true,
+            joinedAt: existingMember.exists()
+              ? existingMember.data().joinedAt
+              : serverTimestamp()
           });
 
           await updateDoc(doc(db,'clubs',clubId,'joinRequests',uid),{
