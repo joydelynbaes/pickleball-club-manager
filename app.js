@@ -1118,10 +1118,16 @@ function adminView(){
 
           <div class="player-actions">
             <span class="badge">${esc(x.role)}</span>
-            ${isActive&&!isOrganizer&&d.id!==user.uid?`
-              <button class="secondary small danger" data-remove-member="${d.id}">
-                Remove
-              </button>
+            ${!isOrganizer&&d.id!==user.uid?`
+              ${isActive?`
+                <button class="secondary small danger" data-remove-member="${d.id}">
+                  Remove
+                </button>
+              `:`
+                <button class="primary small" data-restore-member="${d.id}">
+                  Restore
+                </button>
+              `}
             `:''}
           </div>
         </div>`;
@@ -1145,6 +1151,29 @@ function adminView(){
             });
 
             note(`${name} has been removed from the club.`);
+          }catch(e){
+            note(e.message,true);
+          }
+        };
+      });
+                el.querySelectorAll('[data-restore-member]').forEach(b=>{
+        b.onclick=async()=>{
+          const uid=b.dataset.restoreMember;
+          const member=snap.docs.find(d=>d.id===uid)?.data();
+          if(!member)return;
+
+          const name=member.displayName||member.email||'this member';
+
+          if(!confirm(`Restore ${name}'s access to this club?`))return;
+
+          try{
+            await updateDoc(memberRef(uid),{
+              active:true,
+              restoredAt:serverTimestamp(),
+              restoredBy:user.uid
+            });
+
+            note(`${name} has been restored to the club.`);
           }catch(e){
             note(e.message,true);
           }
