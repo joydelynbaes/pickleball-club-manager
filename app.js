@@ -243,59 +243,32 @@ function sessionView(){
  $('apply').onclick=async()=>{if(state.active)return note('Finish the active round before changing courts or format.',true);await saveState({courts:+$('courts').value,format:$('format').value,scoring:$('scoring').value,target:Math.max(1,+$('target').value||11),winBy:+$('winBy').value})};
  $('generate').onclick=generate;if($('goCourts'))$('goCourts').onclick=()=>{tab='courts';render()};
 }
+
+
 function playersView(){
- $('view').innerHTML=`<section class="panel"><h2>Players</h2><form id="add"><input id="playerName" placeholder="Player name" required><button class="primary full">Add player</button></form>
- ${state.players.map(p=>`<div class="row"><div class="grow"><b>${esc(p.name)}</b><div class="muted small">${p.games} games · ${p.wins} wins · ${p.losses} losses · ${p.waits} waits</div></div><button class="secondary small" data-pause="${p.id}">${p.active?'Pause':'Activate'}</button></div>`).join('')}</section>`;
- $('add').onsubmit=async e=>{e.preventDefault();let name=$('playerName').value.trim();if(state.players.some(p=>p.name.toLowerCase()===name.toLowerCase()))return note('Player already exists.',true);let id=crypto.randomUUID();await saveState({players:[...state.players,{id,name,active:true,games:0,wins:0,losses:0,waits:0}],queue:[...state.queue,id]})};
- root.querySelectorAll('[data-pause]').forEach(b=>b.onclick=async()=>{let id=b.dataset.pause;if(state.active?.matches.some(m=>m.ids.includes(id)))return note('Player is currently playing.',true);await saveState({players:state.players.map(p=>p.id===id?{...p,active:!p.active}:p)})});
-}
+  $('view').innerHTML=`<section class="panel"><h2>Players</h2><form id="add"><input id="playerName" placeholder="Player name" required><button class="primary full">Add player</button></form>
+  ${state.players.map(p=>`<div class="row"><div class="grow"><b><a href="#" data-profile="${p.id}">${esc(p.name)}</a></b><div class="muted small">${p.games} games · ${p.wins} wins · ${p.losses} losses · ${p.waits} waits</div></div><button class="secondary small" data-pause="${p.id}">${p.active?'Pause':'Activate'}</button></div>`).join('')}</section>`;
 
-async function startNewSession(){
-  if(role!=='admin')return note('Only the club organizer can start a new session.',true);
-
-  if(state.active)return note('Finish or close the active round before starting a new session.',true);
-
-  if(!confirm('Start a new session? The current leaderboard will be saved, and current session stats will reset. Match history will remain.'))return;
-
-  let previousRanking={
-    number:state.currentSession.number,
-    startedAt:state.currentSession.startedAt,
-    endedAt:new Date().toISOString(),
-    players:state.players.map(p=>({
-      id:p.id,
-      name:p.name,
-      games:p.games||0,
-      wins:p.wins||0,
-      losses:p.losses||0
-    }))
+  $('add').onsubmit=async e=>{
+    e.preventDefault();
+    let name=$('playerName').value.trim();
+    if(state.players.some(p=>p.name.toLowerCase()===name.toLowerCase()))return note('Player already exists.',true);
+    let id=crypto.randomUUID();
+    await saveState({players:[...state.players,{id,name,active:true,games:0,wins:0,losses:0,waits:0}],queue:[...state.queue,id]});
   };
 
-  let sessionRankings=[
-    ...(state.sessionRankings||[]),
-    previousRanking
-  ].slice(-2);
-
-  let players=state.players.map(p=>({
-    ...p,
-    games:0,
-    wins:0,
-    losses:0,
-    waits:0
-  }));
-
-  let currentSession={
-    number:(state.currentSession.number||1)+1,
-    roundNumber:0,
-    startedAt:new Date().toISOString()
-  };
-
-  await saveState({
-    players,
-    sessionRankings,
-    currentSession
+  root.querySelectorAll('[data-profile]').forEach(b=>{
+    b.onclick=e=>{
+      e.preventDefault();
+      openPlayerProfile(b.dataset.profile,'players');
+    };
   });
 
-  note('New session started!');
+  root.querySelectorAll('[data-pause]').forEach(b=>b.onclick=async()=>{
+    let id=b.dataset.pause;
+    if(state.active?.matches.some(m=>m.ids.includes(id)))return note('Player is currently playing.',true);
+    await saveState({players:state.players.map(p=>p.id===id?{...p,active:!p.active}:p)});
+  });
 }
 
 
