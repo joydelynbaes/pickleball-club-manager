@@ -271,6 +271,53 @@ function playersView(){
   });
 }
 
+async function startNewSession(){
+  if(role!=='admin')return note('Only the club organizer can start a new session.',true);
+
+  if(state.active)return note('Finish or close the active round before starting a new session.',true);
+
+  if(!confirm('Start a new session? The current leaderboard will be saved, and current session stats will reset. Match history will remain.'))return;
+
+  let previousRanking={
+    number:state.currentSession.number,
+    startedAt:state.currentSession.startedAt,
+    endedAt:new Date().toISOString(),
+    players:state.players.map(p=>({
+      id:p.id,
+      name:p.name,
+      games:p.games||0,
+      wins:p.wins||0,
+      losses:p.losses||0
+    }))
+  };
+
+  let sessionRankings=[
+    ...(state.sessionRankings||[]),
+    previousRanking
+  ].slice(-2);
+
+  let players=state.players.map(p=>({
+    ...p,
+    games:0,
+    wins:0,
+    losses:0,
+    waits:0
+  }));
+
+  let currentSession={
+    number:(state.currentSession.number||1)+1,
+    roundNumber:0,
+    startedAt:new Date().toISOString()
+  };
+
+  await saveState({
+    players,
+    sessionRankings,
+    currentSession
+  });
+
+  note('New session started!');
+}
 
 function courtsView(){
   let html='';
