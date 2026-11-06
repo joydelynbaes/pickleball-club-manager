@@ -578,19 +578,24 @@ function courtsView(){
 }
 
 
+
 function rankingView(){
-  const currentPlayers=[...(state.players||[])].filter(p=>!p.archived).sort((a,b)=>{
-    if((b.wins||0)!==(a.wins||0)){
-      return (b.wins||0)-(a.wins||0);
-    }
+  const currentPlayers=[...(state.players||[])]
+    .filter(p=>!p.archived)
+    .sort((a,b)=>{
+      if((b.wins||0)!==(a.wins||0)){
+        return (b.wins||0)-(a.wins||0);
+      }
 
-    const aPct=a.games?(a.wins||0)/a.games:0;
-    const bPct=b.games?(b.wins||0)/b.games:0;
+      const aPct=a.games?(a.wins||0)/a.games:0;
+      const bPct=b.games?(b.wins||0)/b.games:0;
 
-    return bPct-aPct;
-  });
+      return bPct-aPct;
+    });
 
-  const previous=state.sessionRankings?.slice(-1)[0];
+  const previousSessions=[
+    ...(state.sessionRankings||[])
+  ].slice(-2).reverse();
 
   function rankingTable(players){
     if(!players?.length){
@@ -631,16 +636,36 @@ function rankingView(){
 
   $('view').innerHTML=`
     <section class="panel">
-      <h2>Current Session</h2>
+      <h2>Current Session #${state.currentSession?.number||1}</h2>
       <p class="muted small">Live player rankings for the current session.</p>
       ${rankingTable(currentPlayers)}
     </section>
 
     <section class="panel">
-      <h2>Previous Session</h2>
-      <p class="muted small">Saved rankings from the most recently completed session.</p>
-      ${previous?rankingTable(previous.players):
-        '<p class="muted">No previous session ranking yet. It will appear here after you start a new session.</p>'}
+      <h2>Previous Sessions</h2>
+      <p class="muted small">Compare the two most recently completed sessions.</p>
+
+      ${previousSessions.length?
+        previousSessions.map(session=>{
+          const date=session.endedAt||session.startedAt;
+          const formattedDate=date
+            ?new Date(date).toLocaleDateString(undefined,{
+              year:'numeric',
+              month:'long',
+              day:'numeric'
+            })
+            :'Date unavailable';
+
+          return `
+            <div class="session-ranking">
+              <h3>Session #${session.number}</h3>
+              <p class="muted small">${formattedDate}</p>
+              ${rankingTable(session.players)}
+            </div>
+          `;
+        }).join('<hr>')
+        :'<p class="muted">No previous session rankings yet. They will appear here after starting a new session.</p>'
+      }
     </section>
   `;
 
