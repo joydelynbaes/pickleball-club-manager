@@ -70,26 +70,29 @@ a[data-profile]:hover {
   text-decoration: underline;
 }
 
-/* Club Description */
+/* Club Description Textarea */
+
 textarea {
   display: block;
   width: 100%;
   min-height: 130px;
   padding: 12px;
   margin-top: 6px;
-  font: inherit;
+  font-family: inherit;
   font-size: 14px;
   line-height: 1.5;
   color: #edf5ef;
   background: #101b15;
   border: 1px solid #405449;
   border-radius: 9px;
-  resize: vertical;
   box-sizing: border-box;
+  resize: vertical;
 }
 
 textarea:focus {
   outline: none;
   border-color: #65e9b2;
+  box-shadow: 0 0 0 2px rgba(101,233,178,0.15);
+}
   box-shadow: 0 0 0 2px rgba(101,233,178,0.15);
 }
