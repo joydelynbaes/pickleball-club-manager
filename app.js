@@ -405,7 +405,7 @@ function rankingView(){
       return bPct-aPct;
     });
 
-    return sorted.map((p,i)=>{
+    return sorted.slice(0,5).map((p,i)=>{
       const games=p.games||0;
       const wins=p.wins||0;
       const losses=p.losses||0;
