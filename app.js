@@ -689,6 +689,7 @@ function adminView(){
  }else{$('requests').textContent='Only club organizers can approve requests.';$('members').textContent='Only club organizers can view the member list.'}
 }
 document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>{
+  profilePlayerId=null;
   tab=b.dataset.tab;
   render();
 });
