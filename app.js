@@ -431,7 +431,7 @@ async function startNewSession(){
     number:state.currentSession.number,
     startedAt:state.currentSession.startedAt,
     endedAt:new Date().toISOString(),
-    players:state.players.map(p=>({
+    players:state.players.filter(p=>!p.archived).map(p=>({
       id:p.id,
       name:p.name,
       games:p.games||0,
@@ -445,13 +445,13 @@ async function startNewSession(){
     previousRanking
   ].slice(-2);
 
-  let players=state.players.map(p=>({
+  let players=state.players.map(p=>p.archived?p:({
     ...p,
     games:0,
     wins:0,
     losses:0,
     waits:0
-  }));
+}));
 
   let currentSession={
     number:(state.currentSession.number||1)+1,
