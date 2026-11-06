@@ -16,6 +16,7 @@ const root=document; const $=id=>document.getElementById(id);
 const show=(id,yes)=>$(id).classList.toggle('hidden',!yes);
 const note=(msg,error=false)=>{ $('notice').textContent=msg;$('notice').classList.toggle('error',error);show('notice',true)};
 let auth,db,user,clubId,club,role,state,unsubState,unsubMembers,unsubRequests,tab='session',installPrompt;
+let profilePlayerId=null, profileReturnTab='players';
 const path=(...p)=>p.join('/');
 const clubRef=()=>doc(db,'clubs',clubId);
 const memberRef=uid=>doc(db,'clubs',clubId,'members',uid);
