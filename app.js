@@ -129,7 +129,7 @@ function pairTeams(ids){
 async function generate(){
   if(state.active)return note('Finish the current round first.',true);
 
-  let available=state.queue.filter(id=>state.players.some(p=>p.id===id&&p.active));
+  let available=state.queue.filter(id=>state.players.some(p=>p.id===id&&p.active&&!p.archived));
   if(available.length<cap())return note(`Need ${cap()} active players; only ${available.length} are waiting.`,true);
 
   let ids=available.slice(0,cap()),size=state.format==='doubles'?4:2,matches=[];
@@ -234,7 +234,7 @@ function render(){
   if(tab==='admin')adminView();
 }
 function sessionView(){
- let waiting=state.queue.filter(id=>state.players.some(p=>p.id===id&&p.active));
+ let waiting=state.queue.filter(id=>state.players.some(p=>p.id===id&&p.active&&!p.archived));
  $('view').innerHTML=`<section class="panel"><h2>Session setup</h2><div class="grid2">
  <label>Courts<select id="courts">${[1,2,3,4,5,6].map(n=>`<option ${state.courts===n?'selected':''}>${n}</option>`).join('')}</select></label>
  <label>Format<select id="format"><option value="doubles" ${state.format==='doubles'?'selected':''}>Doubles</option><option value="singles" ${state.format==='singles'?'selected':''}>Singles</option></select></label>
@@ -547,7 +547,7 @@ function courtsView(){
 
 
 function rankingView(){
-  const currentPlayers=[...(state.players||[])].sort((a,b)=>{
+  const currentPlayers=[...(state.players||[])].filter(p=>!p.archived).sort((a,b)=>{
     if((b.wins||0)!==(a.wins||0)){
       return (b.wins||0)-(a.wins||0);
     }
