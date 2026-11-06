@@ -197,7 +197,23 @@ if(state.format==='doubles'){
   for(let x of teams[0])for(let y of teams[1])inc(opponents,x,y);
 }
 }
- await saveState({players,partners,opponents,rounds:[...state.rounds,{...a,closed,ended:new Date().toLocaleTimeString()}],active:null});
+await saveState({
+  players,
+  partners,
+  opponents,
+  rounds:[
+    ...state.rounds,
+    {
+      ...a,
+      sessionNumber:state.currentSession.number,
+      sessionStartedAt:state.currentSession.startedAt,
+      closed,
+      ended:new Date().toLocaleTimeString(),
+      endedAt:new Date().toISOString()
+    }
+  ],
+  active:null
+});
 }
 function view(title,sub=''){return `<section class="panel"><h2>${title}</h2><p class="muted small">${sub}</p></section>`}
 function render(){
