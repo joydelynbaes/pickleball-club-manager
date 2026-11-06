@@ -269,10 +269,11 @@ function playersView(){
         <input class="player-search" id="playerSearch" placeholder="Search players...">
 
         <div class="player-filters">
-          <button class="secondary active" data-filter="all">All</button>
-          <button class="secondary" data-filter="active">Active</button>
-          <button class="secondary" data-filter="paused">Paused</button>
-        </div>
+        <button class="secondary active" data-filter="all">All</button>
+        <button class="secondary" data-filter="active">Active</button>
+        <button class="secondary" data-filter="paused">Paused</button>
+        <button class="secondary" data-filter="archived">Archived</button>
+      </div>
       </div>
 
       <div id="playerList"></div>
@@ -284,10 +285,16 @@ function playersView(){
   function renderList(){
     const search=$('playerSearch').value.trim().toLowerCase();
 
-    let players=state.players.filter(p=>!p.archived);
+    let players=state.players;
+
+    if(filter==='archived'){
+    players=players.filter(p=>p.archived);
+    }else{
+    players=players.filter(p=>!p.archived);
 
     if(filter==='active')players=players.filter(p=>p.active);
     if(filter==='paused')players=players.filter(p=>!p.active);
+}
 
     players=players.filter(p=>p.name.toLowerCase().includes(search));
 
