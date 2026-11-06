@@ -221,6 +221,7 @@ function render(){
   const tabs=document.querySelectorAll('.tabs button');
   tabs.forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));
   if(tab==='session')sessionView();
+  if(tab==='ranking')rankingView();
   if(tab==='players')playersView();
   if(tab==='courts')courtsView();
   if(tab==='history')historyView();
