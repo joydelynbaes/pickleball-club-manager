@@ -326,7 +326,7 @@ function courtsView(){
 
   if(role==='admin'){
     html+=`<section class="panel">
-      <h2>Session ${state.currentSession.number}</h2>
+     <h2>Current Session</h2>
       <p class="muted small">Starting a new session saves the current ranking and resets session statistics.</p>
       <button class="secondary full" id="startNewSession" ${state.active?'disabled':''}>Start New Session</button>
     </section>`;
