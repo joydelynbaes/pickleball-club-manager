@@ -822,63 +822,141 @@ function playerProfileView(){
 }
 
 
+
 function historyView(){
-  let matches=(state.rounds||[]).slice().reverse().flatMap(round=>
+  const allMatches=(state.rounds||[]).slice().reverse().flatMap(round=>
     (round.matches||[])
       .filter(m=>m.done)
       .map(m=>({
         round:round.number,
+        sessionNumber:round.sessionNumber,
         court:m.court,
         teams:m.teams,
         score:m.score,
-        ended:round.ended
+        ended:round.ended,
+        endedAt:round.endedAt
       }))
   );
 
-  if(!matches.length){
-    $('view').innerHTML=view(
-      'Match History',
-      'Completed matches will appear here.'
-    );
-    return;
+  const sessions=[...new Set(
+    allMatches.map(m=>m.sessionNumber).filter(n=>n!=null)
+  )].sort((a,b)=>b-a);
+
+  const players=[...(state.players||[])].sort((a,b)=>
+    a.name.localeCompare(b.name)
+  );
+
+  let sessionFilter='all';
+  let playerFilter='all';
+  let dateFilter='';
+
+  function renderHistory(){
+    let matches=allMatches.filter(m=>{
+      const sessionMatch=sessionFilter==='all'||
+        String(m.sessionNumber)===sessionFilter;
+
+      const playerMatch=playerFilter==='all'||
+        [...(m.teams.team1||[]),...(m.teams.team2||[])]
+          .includes(playerFilter);
+
+      const matchDate=m.endedAt?m.endedAt.slice(0,10):'';
+      const dateMatch=!dateFilter||matchDate===dateFilter;
+
+      return sessionMatch&&playerMatch&&dateMatch;
+    });
+
+    $('view').innerHTML=`
+      <section class="panel">
+        <h2>Match History</h2>
+        <p class="muted small">Filter and review completed matches.</p>
+
+        <label>Session
+          <select id="historySession">
+            <option value="all">All sessions</option>
+            ${sessions.map(n=>
+              `<option value="${n}" ${sessionFilter===String(n)?'selected':''}>Session #${n}</option>`
+            ).join('')}
+          </select>
+        </label>
+
+        <label>Player
+          <select id="historyPlayer">
+            <option value="all">All players</option>
+            ${players.map(p=>
+              `<option value="${esc(p.id)}" ${playerFilter===p.id?'selected':''}>${esc(p.name)}</option>`
+            ).join('')}
+          </select>
+        </label>
+
+        <label>Date
+          <input type="date" id="historyDate" value="${dateFilter}">
+        </label>
+
+        <button class="secondary full" id="resetHistory">Reset Filters</button>
+
+        <p class="muted small">${matches.length} completed matches found</p>
+      </section>
+
+      ${matches.length?matches.map(m=>{
+        const winner=m.score[0]>m.score[1]?0:1;
+        const teams=[m.teams.team1,m.teams.team2];
+        const date=m.endedAt
+          ?new Date(m.endedAt).toLocaleDateString()
+          :'Date unavailable';
+
+        return `
+          <section class="panel">
+            <div class="row">
+              <b>Session #${m.sessionNumber??'—'} · Round ${m.round} · Court ${m.court}</b>
+            </div>
+            <p class="muted small">${date} · ${esc(m.ended||'')}</p>
+
+            <div class="teams">
+              <div>
+                <div class="teamname">${teamText(teams[0])}</div>
+                <div class="score">${m.score[0]}</div>
+                ${winner===0?'<span class="green small">WINNER</span>':''}
+              </div>
+
+              <b class="muted">VS</b>
+
+              <div>
+                <div class="teamname">${teamText(teams[1])}</div>
+                <div class="score">${m.score[1]}</div>
+                ${winner===1?'<span class="green small">WINNER</span>':''}
+              </div>
+            </div>
+          </section>
+        `;
+      }).join(''):'<section class="panel"><p class="muted">No completed matches found for these filters.</p></section>'}
+    `;
+
+    $('historySession').onchange=e=>{
+      sessionFilter=e.target.value;
+      renderHistory();
+    };
+
+    $('historyPlayer').onchange=e=>{
+      playerFilter=e.target.value;
+      renderHistory();
+    };
+
+    $('historyDate').onchange=e=>{
+      dateFilter=e.target.value;
+      renderHistory();
+    };
+
+    $('resetHistory').onclick=()=>{
+      sessionFilter='all';
+      playerFilter='all';
+      dateFilter='';
+      renderHistory();
+    };
   }
 
-  $('view').innerHTML=`
-    <section class="panel">
-      <h2>Match History</h2>
-      <p class="muted small">${matches.length} completed matches</p>
-    </section>
-    ${matches.map(m=>{
-      let winner=m.score[0]>m.score[1]?0:1;
-      let teams=[m.teams.team1,m.teams.team2];
-
-      return `
-        <section class="panel">
-          <div class="row">
-            <b>Round ${m.round} · Court ${m.court}</b>
-            <span class="muted small">${esc(m.ended||'')}</span>
-          </div>
-
-          <div class="teams">
-            <div>
-              <div class="teamname">${teamText(teams[0])}</div>
-              <div class="score">${m.score[0]}</div>
-              ${winner===0?'<span class="green small">WINNER</span>':''}
-            </div>
-
-            <b class="muted">VS</b>
-
-            <div>
-              <div class="teamname">${teamText(teams[1])}</div>
-              <div class="score">${m.score[1]}</div>
-              ${winner===1?'<span class="green small">WINNER</span>':''}
-            </div>
-          </div>
-        </section>
-      `;
-    }).join('')}
-  `;
+  renderHistory();
 }
+
 
 function adminView(){
  $('view').innerHTML=`<section class="panel"><h2>Club access</h2><p class="muted small">Share this club ID with members. They must request access and be approved by an organizer.</p><div class="badge">${esc(clubId)}</div><button id="copyId" class="secondary full">Copy club ID</button></section><section class="panel"><h2>Pending requests</h2><div id="requests" class="muted small">Loading requests…</div></section><section class="panel"><h2>Club members</h2><div id="members" class="muted small">Loading members…</div></section>`;
