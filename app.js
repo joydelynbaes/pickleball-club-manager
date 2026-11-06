@@ -45,10 +45,39 @@ function init(){
  const app=initializeApp(firebaseConfig);auth=getAuth(app);db=getFirestore(app);
  onAuthStateChanged(auth,async u=>{user=u;if(!u){cleanup();showOnly('auth');return}showOnly('clubGate');await restoreMembership()});
 }
+
 async function restoreMembership(){
- const saved=localStorage.getItem('pbcm_club');if(!saved)return;
- clubId=saved;
- try{const [c,m]=await Promise.all([getDoc(clubRef()),getDoc(memberRef(user.uid))]);if(c.exists()&&m.exists()&&m.data().active){club=c.data();role=m.data().role;enterClub()}else if(c.exists()){showOnly('pending')}}catch(e){note(e.message,true)}
+  const saved=localStorage.getItem('pbcm_club');
+  if(!saved)return;
+
+  clubId=saved;
+
+  try{
+    const [c,m]=await Promise.all([
+      getDoc(clubRef()),
+      getDoc(memberRef(user.uid))
+    ]);
+
+    if(c.exists()&&m.exists()&&m.data().active===true){
+      club=c.data();
+      role=m.data().role;
+      enterClub();
+    }else if(c.exists()){
+      if(m.exists()&&m.data().active===false){
+        $('pendingTitle').textContent='Club Access Removed';
+        $('pendingMessage').textContent=
+          'Your access to this club has been revoked. Please contact the club organizer if you believe this is a mistake or would like to request access again.';
+      }else{
+        $('pendingTitle').textContent='Request submitted';
+        $('pendingMessage').textContent=
+          'Your club organizer needs to approve your access. Keep this app installed and sign in again later.';
+      }
+
+      showOnly('pending');
+    }
+  }catch(e){
+    note(e.message,true);
+  }
 }
 $('signIn').onclick=async()=>{try{await signInWithEmailAndPassword(auth,$('email').value.trim(),$('password').value)}catch(e){note(e.message,true)}};
 $('signUp').onclick=async()=>{try{await createUserWithEmailAndPassword(auth,$('email').value.trim(),$('password').value)}catch(e){note(e.message,true)}};
