@@ -110,16 +110,7 @@ $('requestJoin').onclick=async()=>{
 
     const existingMember=await getDoc(memberRef(user.uid));
 
-    // Existing approved member or organizer: open the club directly.
-    if(existingMember.exists()&&existingMember.data().active===true){
-      club=c.data();
-      role=existingMember.data().role;
-      localStorage.setItem('pbcm_club',clubId);
-      enterClub();
-      return note('Welcome back to '+club.name+'!');
-    }
-
-    // Organizer account: preserve organizer access.
+    // Check organizer identity FIRST.
     if(c.data().adminUid===user.uid){
       await setDoc(memberRef(user.uid),{
         uid:user.uid,
@@ -134,6 +125,15 @@ $('requestJoin').onclick=async()=>{
       localStorage.setItem('pbcm_club',clubId);
       enterClub();
       return note('Welcome back, organizer!');
+    }
+
+    // Existing approved member.
+    if(existingMember.exists()&&existingMember.data().active===true){
+      club=c.data();
+      role=existingMember.data().role;
+      localStorage.setItem('pbcm_club',clubId);
+      enterClub();
+      return note('Welcome back to '+club.name+'!');
     }
 
     await setDoc(doc(db,'clubs',clubId,'joinRequests',user.uid),{
@@ -152,6 +152,7 @@ $('requestJoin').onclick=async()=>{
     note(e.message,true);
   }
 };
+
 $('pendingBack').onclick=restoreMembership;
 function cleanup(){[unsubState,unsubMembers,unsubRequests].forEach(f=>f&&f());unsubState=unsubMembers=unsubRequests=null}
 function enterClub(){
