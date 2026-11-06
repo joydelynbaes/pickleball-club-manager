@@ -375,6 +375,72 @@ function courtsView(){
   }
 }
 
+function rankingView(){
+  const currentPlayers=[...(state.players||[])].sort((a,b)=>{
+    if((b.wins||0)!==(a.wins||0)){
+      return (b.wins||0)-(a.wins||0);
+    }
+
+    const aPct=a.games?(a.wins||0)/a.games:0;
+    const bPct=b.games?(b.wins||0)/b.games:0;
+
+    return bPct-aPct;
+  });
+
+  const previous=state.sessionRankings?.slice(-1)[0];
+
+  function rankingTable(players){
+    if(!players?.length){
+      return '<p class="muted">No ranking data yet.</p>';
+    }
+
+    const sorted=[...players].sort((a,b)=>{
+      if((b.wins||0)!==(a.wins||0)){
+        return (b.wins||0)-(a.wins||0);
+      }
+
+      const aPct=a.games?(a.wins||0)/a.games:0;
+      const bPct=b.games?(b.wins||0)/b.games:0;
+
+      return bPct-aPct;
+    });
+
+    return sorted.map((p,i)=>{
+      const games=p.games||0;
+      const wins=p.wins||0;
+      const losses=p.losses||0;
+      const percentage=games?((wins/games)*100).toFixed(1):'0.0';
+
+      return `
+        <div class="row">
+          <b class="green">#${i+1}</b>
+          <div class="grow">
+            <b>${esc(p.name)}</b>
+            <div class="muted small">
+              ${games} games · ${wins} wins · ${losses} losses
+            </div>
+          </div>
+          <span class="badge">${percentage}%</span>
+        </div>
+      `;
+    }).join('');
+  }
+
+  $('view').innerHTML=`
+    <section class="panel">
+      <h2>Current Session</h2>
+      <p class="muted small">Live player rankings for the current session.</p>
+      ${rankingTable(currentPlayers)}
+    </section>
+
+    <section class="panel">
+      <h2>Previous Session</h2>
+      <p class="muted small">Saved rankings from the most recently completed session.</p>
+      ${previous?rankingTable(previous.players):
+        '<p class="muted">No previous session ranking yet. It will appear here after you start a new session.</p>'}
+    </section>
+  `;
+}
 
 function historyView(){
   let matches=(state.rounds||[]).slice().reverse().flatMap(round=>
