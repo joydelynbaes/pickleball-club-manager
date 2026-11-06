@@ -959,14 +959,122 @@ function historyView(){
 
 
 function adminView(){
- $('view').innerHTML=`<section class="panel"><h2>Club access</h2><p class="muted small">Share this club ID with members. They must request access and be approved by an organizer.</p><div class="badge">${esc(clubId)}</div><button id="copyId" class="secondary full">Copy club ID</button></section><section class="panel"><h2>Pending requests</h2><div id="requests" class="muted small">Loading requests…</div></section><section class="panel"><h2>Club members</h2><div id="members" class="muted small">Loading members…</div></section>`;
- $('copyId').onclick=()=>navigator.clipboard.writeText(clubId).then(()=>note('Club ID copied.'));
- if(unsubRequests)unsubRequests();if(unsubMembers)unsubMembers();
- if(role==='admin'){
-  unsubRequests=onSnapshot(requestsRef(),snap=>{let el=$('requests');if(!el)return;let pending=snap.docs.filter(d=>d.data().status==='pending');el.innerHTML=pending.length?pending.map(d=>{let x=d.data();return `<div class="row"><div class="grow">${esc(x.displayName)}<div class="muted">${esc(x.email)}</div></div><button class="primary" data-approve="${d.id}">Approve</button></div>`}).join(''):'No pending requests.';el.querySelectorAll('[data-approve]').forEach(b=>b.onclick=async()=>{let uid=b.dataset.approve,req=await getDoc(doc(db,'clubs',clubId,'joinRequests',uid));if(!req.exists())return;let x=req.data();await setDoc(memberRef(uid),{uid,email:x.email,displayName:x.displayName,role:'member',active:true,joinedAt:serverTimestamp()});await updateDoc(doc(db,'clubs',clubId,'joinRequests',uid),{status:'approved'})})});
-  unsubMembers=onSnapshot(memberList(),snap=>{let el=$('members');if(!el)return;el.innerHTML=snap.docs.map(d=>{let x=d.data();return `<div class="row"><span class="grow">${esc(x.displayName||x.email)}</span><span class="badge">${esc(x.role)}</span></div>`}).join('')});
- }else{$('requests').textContent='Only club organizers can approve requests.';$('members').textContent='Only club organizers can view the member list.'}
+  const isAdmin=role==='admin';
+  const description=club.description||'';
+
+  $('view').innerHTML=`
+    <section class="panel">
+      <h2>Club Details</h2>
+      ${isAdmin?`
+        <label>Club Name
+          <input id="clubName" value="${esc(club.name||'')}" maxlength="60">
+        </label>
+        <label>Club Description
+          <textarea id="clubDescription" rows="3" maxlength="300" placeholder="Tell members about your club...">${esc(description)}</textarea>
+        </label>
+        <button id="saveClubDetails" class="primary full">Save Club Details</button>
+      `:`
+        <h3>${esc(club.name||'')}</h3>
+        <p class="muted">${esc(description||'No club description yet.')}</p>
+      `}
+    </section>
+
+    <section class="panel">
+      <h2>Club Access</h2>
+      <p class="muted small">Share this club ID with members. They must request access and be approved by an organizer.</p>
+      <div class="badge">${esc(clubId)}</div>
+      <button id="copyId" class="secondary full">Copy Club ID</button>
+    </section>
+
+    <section class="panel">
+      <h2>Pending Requests</h2>
+      <div id="requests" class="muted small">Loading requests…</div>
+    </section>
+
+    <section class="panel">
+      <h2>Club Members</h2>
+      <div id="members" class="muted small">Loading members…</div>
+    </section>
+  `;
+
+  $('copyId').onclick=()=>navigator.clipboard.writeText(clubId).then(()=>note('Club ID copied.'));
+
+  if(isAdmin){
+    $('saveClubDetails').onclick=async()=>{
+      const name=$('clubName').value.trim();
+      const description=$('clubDescription').value.trim();
+
+      if(!name)return note('Club name cannot be empty.',true);
+
+      try{
+        await updateDoc(clubRef(),{name,description});
+        club={...club,name,description};
+        $('clubTitle').textContent=name;
+        note('Club details updated successfully!');
+      }catch(e){
+        note(e.message,true);
+      }
+    };
+  }
+
+  if(unsubRequests)unsubRequests();
+  if(unsubMembers)unsubMembers();
+
+  if(isAdmin){
+    unsubRequests=onSnapshot(requestsRef(),snap=>{
+      let el=$('requests');
+      if(!el)return;
+
+      let pending=snap.docs.filter(d=>d.data().status==='pending');
+
+      el.innerHTML=pending.length?pending.map(d=>{
+        let x=d.data();
+        return `<div class="row">
+          <div class="grow">${esc(x.displayName)}
+            <div class="muted">${esc(x.email)}</div>
+          </div>
+          <button class="primary" data-approve="${d.id}">Approve</button>
+        </div>`;
+      }).join(''):'No pending requests.';
+
+      el.querySelectorAll('[data-approve]').forEach(b=>{
+        b.onclick=async()=>{
+          let uid=b.dataset.approve;
+          let req=await getDoc(doc(db,'clubs',clubId,'joinRequests',uid));
+          if(!req.exists())return;
+
+          let x=req.data();
+
+          await setDoc(memberRef(uid),{
+            uid,email:x.email,displayName:x.displayName,
+            role:'member',active:true,joinedAt:serverTimestamp()
+          });
+
+          await updateDoc(doc(db,'clubs',clubId,'joinRequests',uid),{
+            status:'approved'
+          });
+        };
+      });
+    });
+
+    unsubMembers=onSnapshot(memberList(),snap=>{
+      let el=$('members');
+      if(!el)return;
+
+      el.innerHTML=snap.docs.map(d=>{
+        let x=d.data();
+        return `<div class="row">
+          <span class="grow">${esc(x.displayName||x.email)}</span>
+          <span class="badge">${esc(x.role)}</span>
+        </div>`;
+      }).join('');
+    });
+  }else{
+    $('requests').textContent='Only club organizers can approve requests.';
+    $('members').textContent='Only club organizers can view the member list.';
+  }
 }
+
 document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>{
   profilePlayerId=null;
   tab=b.dataset.tab;
